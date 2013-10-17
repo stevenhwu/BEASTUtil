@@ -31,7 +31,7 @@ public class generateXMLforSrp {
 //		String inDir = "/home/sw167/workspace/ABI/simData/Run0603/";
 
 		XMLTemplate template = new XMLTemplate(tempaletfile);
-		template.getTemplate();	
+//		template.getTemplate();	
 
 		try {
 			
