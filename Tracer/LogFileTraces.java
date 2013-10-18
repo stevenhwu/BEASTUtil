@@ -291,7 +291,8 @@ public class LogFileTraces extends AbstractTraceList {
                     }
 
                 } else {
-                    throw new TraceException("State " + state + ": missing values at line " + reader.getLineNumber());
+                	pass=false;
+//                    throw new TraceException("State " + state + ": missing values at line " + reader.getLineNumber());
                 }
             }
 

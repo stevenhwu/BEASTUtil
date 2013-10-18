@@ -21,19 +21,26 @@
 package Tracer;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.apache.commons.lang3.ArrayUtils;
+
+import com.google.common.base.Strings;
 import com.google.common.primitives.Doubles;
 
 
+import dr.inference.loggers.TabDelimitedFormatter;
 import dr.inference.trace.MarginalLikelihoodAnalysis;
 import dr.inference.trace.TraceAnalysis;
 import dr.inference.trace.TraceCorrelation;
@@ -56,20 +63,31 @@ public class MainModLogAnalyser {
         boolean stdErr = true;
         boolean verbose = false;
         String marginalLikelihood = null;
-        String summaryVariable = "tmrca(RhidGloi)";
+        String[] summaryVariable = new String[] {"posterior", "tmrca(RhidGloi)"};
         
         
 //	    for (File f : files) {
+		StringBuilder sb = new StringBuilder();
 		analyze(fCwd, burnin, verbose, new boolean[] { true }, hpds, ess,
-				stdErr, marginalLikelihood, summaryVariable);
+				stdErr, marginalLikelihood, summaryVariable, sb);
 		// }
+		
+		String outfile = "/home/sw167/PostdocLarge/BEASTRun/Project_OrigFungi/summaryOutput";
+		PrintWriter out
+		   = new PrintWriter(new BufferedWriter(new FileWriter(outfile)));
+		out.println(sb.toString());
+		out.close();
+		
+		System.err.println(sb.toString());
     	System.err.println(count);
     }	
 	static int count = 0;
-	public static void analyze(File file, int burnin, boolean verbose, boolean[] drawHeader,
+	public static StringBuilder analyze(File file, int burnin, boolean verbose, boolean[] drawHeader,
 	                     boolean hpds, boolean ess, boolean stdErr,
-	                     String marginalLikelihood, String summaryVariable) throws TraceException {
+	                     String marginalLikelihood, String[] summaryVariable,
+	                     StringBuilder sb) throws TraceException {
 	
+//		StringBuilder sb = new StringBuilder();
 	    if (file.isFile()) {
 	    	if (file.getName().endsWith(".log") ) {
 		        try {
@@ -79,9 +97,14 @@ public class MainModLogAnalyser {
 		            if (verbose) {
 		                report(name, burnin, marginalLikelihood);
 		            } else {
-						shortReport(name, burnin, drawHeader[0], hpds, ess,
+						String out = shortReport(name, burnin, drawHeader[0], hpds, ess,
 								stdErr, marginalLikelihood, summaryVariable);
-						// drawHeader[0] = false;
+//						System.err.println(out.length() +"\t"+out);
+						if(out.length()!=0){
+							sb.append(out);
+							drawHeader[0] = false;
+						}
+						 
 		            }
 		        } catch (IOException e) {
 	            //e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
@@ -92,72 +115,88 @@ public class MainModLogAnalyser {
 	        for (File f : files) {
 	            if (f.isDirectory()) {
 					analyze(f, burnin, verbose, drawHeader, hpds, ess, stdErr,
-							marginalLikelihood, summaryVariable);
+							marginalLikelihood, summaryVariable, sb);
 				} else if (f.getName().endsWith(".log") || f.getName().endsWith(".p")) {
 					analyze(f, burnin, verbose, drawHeader, hpds, ess, stdErr,
-							marginalLikelihood, summaryVariable);
+							marginalLikelihood, summaryVariable, sb);
 				} else {
 	                if (verbose) System.out.println("Ignoring file: " + f);
 	            }
 	        }
 	    }
+//	    System.err.println(sb.toString());
+	    return sb;
 	}
 
 
 
 
-	public static TraceList shortReport(String filename, final int burnin,
+	public static String shortReport(String filename, final int burnin,
 			boolean drawHeader, boolean hpds, boolean individualESSs,
-			boolean stdErr, String likelihoodName, String summayrVariable) throws java.io.IOException,
+			boolean stdErr, String likelihoodName, String[] summaryVariables) throws java.io.IOException,
 			TraceException {
 
+		StringBuilder sb = new StringBuilder();
 		TraceList traces = analyzeLogFile(filename, burnin);
 		if(traces != null){
 			int maxState = traces.getMaxState();
-	
+			
 			double minESS = Double.MAX_VALUE;
-	
 			if (drawHeader) {
+				sb.append("file\t");
 				System.out.print("file\t");
 				for (int i = 0; i < traces.getTraceCount(); i++) {
 					String traceName = traces.getTraceName(i);
-					if(traceName.equals(summayrVariable)){
+					
+					if (ArrayUtils.contains(summaryVariables, traceName) ){
+						sb.append(traceName + "\t");
 						System.out.print(traceName + "\t");
 						if (stdErr)
+							sb.append(traceName + " stdErr\t");
 							System.out.print(traceName + " stdErr\t");
 						if (hpds) {
+							sb.append(traceName + " hpdLower\t");
+							sb.append(traceName + " hpdUpper\t");
 							System.out.print(traceName + " hpdLower\t");
 							System.out.print(traceName + " hpdUpper\t");
 						}
 						if (individualESSs) {
+							sb.append(traceName + " ESS\t");
 							System.out.print(traceName + " ESS\t");
 						}
 					}
 				}
+				sb.append("minESS\t");
 				System.out.print("minESS\t");
 				if (likelihoodName != null) {
 					System.out.print("marginal likelihood\t");
 					System.out.print("stdErr\t");
 				}
+				sb.append("chainLength\n");
 				System.out.println("chainLength");
 			}
-	
+			sb.append(filename + "\t");
 			System.out.print(filename + "\t");
 			for (int i = 0; i < traces.getTraceCount(); i++) {
 				// TraceDistribution distribution =
 				// traces.getDistributionStatistics(i);
 				String traceName = traces.getTraceName(i);
-				if(traceName.equals(summayrVariable)){
+//				System.out.println(traceName +"\t"+ Arrays.toString(summaryVariables));
+				if (ArrayUtils.contains(summaryVariables, traceName) ){
 					TraceCorrelation distribution = traces.getCorrelationStatistics(i);
-					
+					sb.append(distribution.getMean() + "\t");
 					System.out.print(distribution.getMean() + "\t");
 					if (stdErr)
+						sb.append(distribution.getStdErrorOfMean() + "\t");
 						System.out.print(distribution.getStdErrorOfMean() + "\t");
 					if (hpds) {
+						sb.append(distribution.getLowerHPD() + "\t");
+						sb.append(distribution.getUpperHPD() + "\t");
 						System.out.print(distribution.getLowerHPD() + "\t");
 						System.out.print(distribution.getUpperHPD() + "\t");
 					}
 					if (individualESSs) {
+						sb.append(distribution.getESS() + "\t");
 						System.out.print(distribution.getESS() + "\t");
 					}
 					double ess = distribution.getESS();
@@ -166,7 +205,7 @@ public class MainModLogAnalyser {
 					}
 				}
 			}
-	
+			sb.append(minESS + "\t");
 			System.out.print(minESS + "\t");
 	
 			if (likelihoodName != null) {
@@ -196,13 +235,15 @@ public class MainModLogAnalyser {
 				System.out.print(analysis.getLogMarginalLikelihood() + "\t");
 				System.out.print(analysis.getBootstrappedSE() + "\t");
 			}
-	
+			sb.append(maxState).append("\n");
 			System.out.println(maxState);
 		}
 		else{
-			System.err.println(filename);
+//			System.err.println(filename);
 		}
-		return traces;
+		
+//		System.err.println(":"+ sb.toString()+":");
+		return sb.toString();
 	}
 	
     private static TraceList analyzeLogFile(String fileName, int burnin) throws TraceException, IOException {
