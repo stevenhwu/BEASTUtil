@@ -55,7 +55,7 @@ public class MainModLogAnalyser {
 	
 		String cwd = System.getProperty("user.dir")+File.separator;
 //		cwd = "/home/sw167/workspace/BEASTUtil/data/";
-		cwd = "/home/sw167/PostdocLarge/BEASTRun/Project_OrigFungi/indRun";
+		cwd = "/home/sw167/PostdocLarge/BEASTRun/Project_OrigFungi/MultiRegion_R5";
 		File fCwd = new File(cwd);
 		int burnin = -1;
         boolean hpds = true;
@@ -251,6 +251,7 @@ public class MainModLogAnalyser {
         File file = new File(fileName);
         LogFileTraces traces = new LogFileTraces(fileName, file);
         boolean pass = traces.loadTraces();
+        System.err.println(fileName);
 //        System.err.println(pass);
         if(pass){
 	        traces.setBurnIn(burnin);

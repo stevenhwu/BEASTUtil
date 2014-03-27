@@ -16,9 +16,9 @@ import dr.evolution.alignment.Alignment;
 import dr.evolution.datatype.Nucleotides;
 import dr.evolution.io.FastaImporter;
 
-public class GenerateXMLFungi {
+public class GenerateXMLMaryCoalescent {
 
-	public GenerateXMLFungi() {
+	public GenerateXMLMaryCoalescent() {
 		// TODO Auto-generated constructor stub
 	}
 
@@ -28,8 +28,9 @@ public class GenerateXMLFungi {
 	public static void main(String[] args) {
 
 //		String HIndex = "H12_";
-		String pwd = "/home/sw167/Postdoc/Project_OrigFungi/data/";
-		String tempaletfile = "/home/sw167/Postdoc/Project_OrigFungi/BEAST/OrigF_LGGI_Template.xml";
+		String pwd = "/home/sw167/Postdoc/Project_MaryDeBruijn/coalesce/";
+//		String tempaletfile = pwd+"zcoalesceTemplate.xml";
+		String tempaletfile = pwd+"coalesce1_1.xml";
 
 //		String inDir = "/home/sw167/workspace/ABI/simData/" + HIndex + "Data/";
 		// String inDir = "/home/sw167/workspace/ABI/simData/Run0603/";
@@ -52,7 +53,7 @@ public class GenerateXMLFungi {
 			
 			for (int i = 0; i < fileList.length; i++) {
 				String prefix = fileList[i].replace(".fasta", "");
-				String xmlFile = pwd+prefix+File.separatorChar;
+				String xmlFile = pwd+"xml2"+File.separatorChar+prefix+File.separatorChar;
 				
 				Path xmlDir = Paths.get(xmlFile);
 				if (!Files.exists(xmlDir)){
@@ -64,13 +65,14 @@ public class GenerateXMLFungi {
 				BufferedReader in = new BufferedReader(new FileReader(alignmentFile));
 				FastaImporter importer = new FastaImporter(in,Nucleotides.INSTANCE);
 				Alignment alignment = importer.importAlignment();
-
+				in.close();
+				
 				template.parseSequenceAlignment(alignment);
-				template.setPrefix(prefix);
+				
 
 				PrintWriter xmlOut = new PrintWriter(new BufferedWriter(new FileWriter(xmlFile)));
 
-				String xmlString = template.generateXMLFile();
+				String xmlString = template.generateXMLFile(prefix);
 				xmlOut.println(xmlString);
 				xmlOut.close();
 				System.out.println(i+"\tconverted "+prefix+" to "+xmlFile);
