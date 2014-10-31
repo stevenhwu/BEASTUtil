@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 
+import javafx.scene.control.Tab;
+
+import org.apache.commons.lang3.text.StrBuilder;
+
 import dr.evolution.alignment.Alignment;
 
 public class XMLTemplate {
@@ -12,10 +16,11 @@ public class XMLTemplate {
 	private String prefix;
 	
 	private ArrayList<StringBuilder> sb;
-	private StringBuilder sbAlignment;
+	protected StringBuilder sbTaxaAlignment;
 	
 	@Deprecated
 	private String templateFileNamePrefix;
+	private boolean isOperatorAnalysis;
 	
 	public XMLTemplate(String templateFileName){
 		this.templateFileName = templateFileName;
@@ -48,7 +53,7 @@ public class XMLTemplate {
 			
 			while ( (line = in.readLine()) != null ) {
 				
-				if(line.startsWith("\t<alignment id=")){
+				if(line.startsWith("\t<taxa id=")){
 
 					sbi.append(line);
 					sb.add(sbi);
@@ -63,13 +68,23 @@ public class XMLTemplate {
 //				<mcmc id="mcmc" chainLength="100000000" autoOptimize="true" operatorAnalysis="
 				else if(line.startsWith("\t<mcmc id=")){
 					String delimiter = "operatorAnalysis=\"";
-					int index = line.indexOf(delimiter) + delimiter.length();
-					sbi.append( line.subSequence(0, index) );
-					sb.add(sbi);
-					
-					sbi = new StringBuilder();
-					int index2 = line.indexOf("\"",index);
-					sbi.append(line.subSequence(index2, line.length())).append("\n");
+					int index = line.indexOf(delimiter);
+					if(index != -1){
+						isOperatorAnalysis=true;
+						index += + delimiter.length();
+						sbi.append( line.subSequence(0, index) );
+						sb.add(sbi);
+						
+						sbi = new StringBuilder();
+						int index2 = line.indexOf("\"",index);
+						sbi.append(line.subSequence(index2, line.length())).append("\n");
+					}
+					else{
+						isOperatorAnalysis=false;
+						sbi.append(line).append("\n");
+						sb.add(sbi);
+						sbi = new StringBuilder();
+					}
 				}
 //				<log id="fileLog" logEvery="10000" fileName="
 				else if(line.startsWith("\t\t<log id=\"fileLog\"")){
@@ -107,16 +122,33 @@ public class XMLTemplate {
 	}
 	public void parseSequenceAlignment(Alignment alignment) {
 	
-		sbAlignment = new StringBuilder();
-		
+		sbTaxaAlignment = new StringBuilder();
+		StringBuilder tempAlignment = new StringBuilder();
+
+//		<taxa id="taxa">
+//		<taxon id="99_148_1200"/>
+//		<taxon id="154_148_1200"/>
+//		<taxon id="152_148_1200"/>
+//		<taxon id="101_148_1200"/>
+//		<taxon id="103_148_1200"/>
+//		<taxon id="106_148_1200"/>
+//		<taxon id="126_148_1200"/>
+//		<taxon id="127_148_1200"/>
+//	</taxa>
+		sbTaxaAlignment.append("\n");
 		for (int j = 0; j < alignment.getTaxonCount(); j++) {
-	
-			sbAlignment.append("<sequence>\n\t<taxon idref=\"")
-					.append(alignment.getTaxonId(j)).append("\"/>\n\t\t")
+			sbTaxaAlignment.append("\t\t<taxon id=\"")
+					.append(alignment.getTaxonId(j))
+					.append("\"/>\n");
+			tempAlignment.append("\t\t<sequence>\n\t\t\t<taxon idref=\"")
+					.append(alignment.getTaxonId(j)).append("\"/>\n\t\t\t")
 					.append(alignment.getSequence(j).getSequenceString())
-					.append("\n</sequence>\n");
+					.append("\n\t\t</sequence>\n");
 	
 		}
+		sbTaxaAlignment.append("\t</taxa>\n\n")
+			.append("\t<alignment id=\"alignment\" dataType=\"nucleotide\">\n")
+			.append(tempAlignment);
 		
 	}
 
@@ -126,7 +158,7 @@ public class XMLTemplate {
 	}
 
 	public String generateXMLFile(String prefix) {
-		if(sbAlignment == null){
+		if(sbTaxaAlignment == null){
 			System.err.println("No sequences");
 			System.exit(-1);
 		}
@@ -136,9 +168,11 @@ public class XMLTemplate {
 		}
 		StringBuffer sb = new StringBuffer();
 		sb.append(getSection(0));
-		sb.append(sbAlignment);
+		sb.append(sbTaxaAlignment);
 		sb.append(getSection(1));
-		sb.append(prefix+".ops");
+		if(isOperatorAnalysis){
+			sb.append(prefix+".ops");
+		}
 		sb.append(getSection(2));
 		sb.append(prefix+".log");
 		sb.append(getSection(3));
@@ -215,7 +249,7 @@ public class XMLTemplate {
 
 	@Deprecated
 	public String parseOutFileNames(String prefix) {
-		if(sbAlignment == null){
+		if(sbTaxaAlignment == null){
 			System.err.println("No sequences");
 			System.exit(-1);
 		}
@@ -230,4 +264,5 @@ public class XMLTemplate {
 		sb.append(getSection(4));
 		return sb.toString();
 	}
+
 }

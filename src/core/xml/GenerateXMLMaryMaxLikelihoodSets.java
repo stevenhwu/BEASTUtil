@@ -16,9 +16,9 @@ import dr.evolution.alignment.Alignment;
 import dr.evolution.datatype.Nucleotides;
 import dr.evolution.io.FastaImporter;
 
-public class GenerateXMLMaryCoalescent {
+public class GenerateXMLMaryMaxLikelihoodSets {
 
-	public GenerateXMLMaryCoalescent() {
+	public GenerateXMLMaryMaxLikelihoodSets() {
 		// TODO Auto-generated constructor stub
 	}
 
@@ -27,10 +27,10 @@ public class GenerateXMLMaryCoalescent {
 	 */
 	public static void main(String[] args) {
 
-
-		String pwd = "/home/sw167/Postdoc/Project_MaryDeBruijn/MaxLikelihoodSet/H7_forward/";
+//		String HIndex = "H12_";
+		String pwd = "/home/sw167/Postdoc/Project_MaryDeBruijn/coalesce/";
 //		String tempaletfile = pwd+"zcoalesceTemplate.xml";
-		String tempaletfile = pwd+"H7_50.60.back.xml";
+		String tempaletfile = pwd+"coalesce1_1.xml";
 
 //		String inDir = "/home/sw167/workspace/ABI/simData/" + HIndex + "Data/";
 		// String inDir = "/home/sw167/workspace/ABI/simData/Run0603/";
@@ -53,7 +53,7 @@ public class GenerateXMLMaryCoalescent {
 			
 			for (int i = 0; i < fileList.length; i++) {
 				String prefix = fileList[i].replace(".fasta", "");
-				String xmlFile = pwd+"xml"+File.separatorChar+prefix+File.separatorChar;
+				String xmlFile = pwd+"xml2"+File.separatorChar+prefix+File.separatorChar;
 				
 				Path xmlDir = Paths.get(xmlFile);
 				if (!Files.exists(xmlDir)){
